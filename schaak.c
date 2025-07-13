@@ -20,16 +20,20 @@
 #define inboard(x,y) (x>=0 && x<8 && y>=0 && y<8)
 #define xymask(x,y) (inboard(x,y)?(1UL<<(8UL*(y)+(x))):0UL)
 
-
+// Piece-square tables
 int eval_P[64] = {0,0,0,0,0,0,0,0,15,16,17,18,18,17,16,15,
                   14,15,16,17,17,16,15,14,13,14,15,16,16,15,14,13,
                   12,13,14,15,15,14,13,12,11,12,13,14,14,13,13,11,
                   10,11,12,13,13,12,11,10,0,0,0,0,0,0,0,0};
 
-int eval_N[64] = {30,31,32,32,32,32,31,30, 31,31,33,34,34,33,31,31,
-                  32,33,34,35,35,34,33,32, 32,34,35,36,36,35,34,32,
-                  32,34,35,36,36,35,34,32, 32,33,34,35,35,34,33,32,
-                  31,31,33,34,34,33,31,31, 30,31,32,32,32,32,31,30};
+int eval_N[64] = {30,31,32,32,32,32,31,30,
+                  31,31,33,34,34,33,31,31,
+                  32,33,34,35,35,34,33,32,
+                  32,34,35,36,36,35,34,32,
+                  32,34,35,36,36,35,34,32,
+                  32,33,34,35,35,34,33,32,
+                  31,31,33,34,34,33,31,31,
+                  30,31,32,32,32,32,31,30};
 
 int eval_B[64]={30,30,30,30,30,30,30,30,
                 30,30,30,30,30,30,30,30,
@@ -39,6 +43,7 @@ int eval_B[64]={30,30,30,30,30,30,30,30,
                 30,30,30,30,30,30,30,30,
                 30,30,30,30,30,30,30,30,
                 30,30,30,30,30,30,30,30};
+
 int eval_R[64]={50,50,50,50,50,50,50,50,
                 50,50,50,50,50,50,50,50,
                 50,50,50,50,50,50,50,50,
@@ -47,6 +52,7 @@ int eval_R[64]={50,50,50,50,50,50,50,50,
                 50,50,50,50,50,50,50,50,
                 50,50,50,50,50,50,50,50,
                 50,50,50,50,50,50,50,50};
+
 int eval_Q[64]={90,90,90,90,90,90,90,90,
                 90,90,90,90,90,90,90,90,
                 90,90,90,90,90,90,90,90,
@@ -55,6 +61,7 @@ int eval_Q[64]={90,90,90,90,90,90,90,90,
                 90,90,90,90,90,90,90,90,
                 90,90,90,90,90,90,90,90,
                 90,90,90,90,90,90,90,90};
+
 int eval_K[64]={200,200,200,200,200,200,200,200,
                 200,200,200,200,200,200,200,200,
                 200,200,200,200,200,200,200,200,
@@ -67,35 +74,33 @@ int eval_K[64]={200,200,200,200,200,200,200,200,
 #define u64 unsigned long int
 #define i64   signed long int
 #define u16 unsigned short
+
 typedef struct {
-  /* black pieces */
-  u64 p,k,q,r,b,n;
-  /* white pieces */
-  u64 P,K,Q,R,B,N;
-  /* Castling, turn boolean for white to move */
-  char cq:1,ck:1,cQ:1,cK:1,turn:1;
-  u64 en_passant;
-  void * prev;
-  int movecount;
+    u64 p,k,q,r,b,n; // Black pieces
+    u64 P,K,Q,R,B,N; // White pieces
+    char cq:1,ck:1,cQ:1,cK:1,turn:1; // Castling and turn
+    u64 en_passant;
+    void * prev;
+    int movecount;
 } board;
 
-typedef struct
-{
-  unsigned char from;
-  unsigned char to;
-  unsigned char promote:2; /* bishop,knight,rook,queen */
+typedef struct {
+    unsigned char from;
+    unsigned char to;
+    unsigned char promote:2; // Promotion: bishop, knight, rook, queen
 } move;
 
 typedef struct {
-  move m[4096];
-  u64 size;
+    move m[4096];
+    u64 size;
 } moves;
 
-int err=0;
+int err = 0;
 
+// Function declarations
 void drawboard(board);
 moves validmoves(board);
-board apply(board,move);
+board apply(board, move);
 move mflip(move);
 board flip(board);
 board cboard(board);
@@ -103,9 +108,6 @@ int eqboard(board, board);
 u64 hboard(board);
 int is_check(board);
 int board_status(board);
-
-
-
 
 int eval_minmax(board b)
 {
