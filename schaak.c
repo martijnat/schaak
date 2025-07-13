@@ -123,12 +123,12 @@ int eval_minmax(board b)
       if(b.R&m) score+=eval_R[i];
       if(b.Q&m) score+=eval_Q[i];
       if(b.K&m) score+=eval_K[i];
-      if(b.p&m) score-=eval_P[64-i];
-      if(b.n&m) score-=eval_N[64-i];
-      if(b.b&m) score-=eval_B[64-i];
-      if(b.r&m) score-=eval_R[64-i];
-      if(b.q&m) score-=eval_Q[64-i];
-      if(b.k&m) score-=eval_K[64-i];
+      if(b.p&m) score-=eval_P[63-i];
+      if(b.n&m) score-=eval_N[63-i];
+      if(b.b&m) score-=eval_B[63-i];
+      if(b.r&m) score-=eval_R[63-i];
+      if(b.q&m) score-=eval_Q[63-i];
+      if(b.k&m) score-=eval_K[63-i];
     }
   /* int my_moves=validmoves(b).size; */
   /* int opp_moves=validmoves(flip(b)).size; */
