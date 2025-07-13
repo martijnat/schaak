@@ -108,6 +108,7 @@ int eqboard(board, board);
 u64 hboard(board);
 int is_check(board);
 int board_status(board);
+u64 knight_attacks(u64);
 
 int eval_minmax(board b)
 {
@@ -145,6 +146,16 @@ int eval_minmax(board b)
 int eval_relative(board b)
 {
   return (b.turn!=0?-1:1) *eval_minmax(b);
+}
+
+u64 knight_attacks(u64 knights) {
+    u64 l1 = (knights >> 1) & 0x7f7f7f7f7f7f7f7f;
+    u64 l2 = (knights >> 2) & 0x3f3f3f3f3f3f3f3f;
+    u64 r1 = (knights << 1) & 0xfefefefefefefefe;
+    u64 r2 = (knights << 2) & 0xfcfcfcfcfcfcfcfc;
+    u64 h1 = l1 | r1;
+    u64 h2 = l2 | r2;
+    return (h1<<16) | (h1>>16) | (h2<<8) | (h2>>8);
 }
 
 moves validmoves(board b)
@@ -440,8 +451,7 @@ int is_check(board b){
   if(b.p&(xymask(x-1,y-1)|xymask(x+1,y-1)))
     return 1;
   /* check knights */
-  if(b.n&(xymask(x-1,y-2)|xymask(x-1,y+2)|xymask(x+1,y-2)|xymask(x+1,y+2)|
-          xymask(x-2,y-1)|xymask(x-2,y+1)|xymask(x+2,y-1)|xymask(x+2,y+1)))
+  if(knight_attacks(b.n)&b.K)
     return 1;
   /* check kings */
   if(b.k&(xymask(x-1,y)|xymask(x+1,y)|xymask(x,y-1)|xymask(x,y+1)|
@@ -724,14 +734,10 @@ int eval_negamax(board b,int depth,int alpha,int beta)
   for(int i=0;i<M.size;i++)
     {
       int score= -eval_negamax(apply(b,M.m[i]),depth-1,-beta, -alpha);
-      if (score >= beta)
-        return score;
-      if (score > best)
-        best = score;
-      if (score > alpha)
-        alpha = score;
+      if (score >= beta) return beta;
+      if (score > alpha) alpha = score;
     }
-  return best;
+  return alpha;
 }
 
 move ai_negamax(board b,int depth)
