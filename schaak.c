@@ -342,7 +342,7 @@ int eqboard(board b1,board b2)
 }
 
 #define flipped_row(x,n) (((x>>(8UL*n))&255UL)<<(56UL-8UL*n))
-#define flipped_bitboard(x) flipped_row(x,0)|flipped_row(x,1)|flipped_row(x,2)|flipped_row(x,3)|flipped_row(x,3)|flipped_row(x,4)|flipped_row(x,5)|flipped_row(x,6)|flipped_row(x,7)
+#define flipped_bitboard(x) flipped_row(x,0)|flipped_row(x,1)|flipped_row(x,2)|flipped_row(x,3)|flipped_row(x,4)|flipped_row(x,5)|flipped_row(x,6)|flipped_row(x,7)
 
 move mflip(move m)
 {
