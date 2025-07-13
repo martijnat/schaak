@@ -752,7 +752,7 @@ move ai_negamax(board b,int depth)
       int i = (j+R)%moveset.size;
       i = (i+moveset.size)%moveset.size;
       move m=moveset.m[i];
-      int eval=-eval_negamax(apply(b,m),depth,INF,INF);
+      int eval=-eval_negamax(apply(b,m),depth,-INF,INF);
       if(eval>=besteval){
         besteval=eval;
         bestmove=m;
@@ -763,6 +763,7 @@ move ai_negamax(board b,int depth)
 move ai_negamax1(board b) {return ai_negamax(b,1);}
 move ai_negamax2(board b) {return ai_negamax(b,2);}
 move ai_negamax3(board b) {return ai_negamax(b,3);}
+move ai_negamaxx(board b) {return ai_negamax(b,4);} /* highest depth that can repond in a few seconds */
 
 
 
@@ -964,7 +965,7 @@ move player(board b)
 /* - ai_simple */
 
 #define whitemove player
-#define blackmove ai_negamax1
+#define blackmove ai_negamax2
 void playgame(){
   board b=startpos();
   move m={};
@@ -999,7 +1000,7 @@ void playgame(){
   return;
 }
 
-#define test_ai1 ai_negamax1
+#define test_ai1 ai_negamax3
 /* #define test_ai2 ai_random */
 #define test_ai2 ai_random
 void testai(int ngames){
@@ -1169,7 +1170,7 @@ int main(int argc, char ** argv)
   /* uci_game(); */
   /* selftest(); */
   playgame();
-  /* testai(20); */
+  /* testai(100); */
   /* traintable(100); */
   /* randgame(4); */
   return 0;
