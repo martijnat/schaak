@@ -156,8 +156,7 @@ moves validmoves(board b)
   u64 own_pieces = (b.turn==0)?(b.p|b.k|b.q|b.r|b.b|b.n):(b.P|b.K|b.Q|b.R|b.B|b.N);
   for(int from=0;from<64;from++){
     u64 from_mask=1UL<<from;
-    if(0){
-    }  else if(from_mask&(b.n|b.N)) { /* quick knight moves */
+    if(from_mask&(b.n|b.N)) { /* quick knight moves */
       int offsets[8]={-17,-15,-10,-6,6,10,15,17};
       for(int i=0;i<8;i++)
         if(from+offsets[i]>=0 && from+offsets[i]<64 &&
