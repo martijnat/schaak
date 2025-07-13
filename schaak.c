@@ -713,21 +713,23 @@ move ai_simple(board b)
   return bestmove;
 }
 
-int eval_negamax(board b,int depth,int alphabeta)
+int eval_negamax(board b,int depth,int alpha,int beta)
 {
   if(depth<=0)return -eval_relative(b);
   moves M=validmoves(b);
   if(M.size==0) return -eval_relative(b); /* stalemate or checkmate */
-  int max=-INF;
+  int best=-INF;
   for(int i=0;i<M.size;i++)
     {
-      int score= -eval_negamax(apply(b,M.m[i]),depth-1,-max);
-      if(score>=alphabeta)
+      int score= -eval_negamax(apply(b,M.m[i]),depth-1,-beta, -alpha);
+      if (score >= beta)
         return score;
-      if(score>max)
-        max=score;
+      if (score > best)
+        best = score;
+      if (score > alpha)
+        alpha = score;
     }
-  return max;
+  return best;
 }
 
 move ai_negamax(board b,int depth)
@@ -742,17 +744,12 @@ move ai_negamax(board b,int depth)
       int i = (j+R)%moveset.size;
       i = (i+moveset.size)%moveset.size;
       move m=moveset.m[i];
-      /* printf("%d:besteval=%d\n",__LINE__,besteval); */
-      int eval=-eval_negamax(apply(b,m),depth,-besteval);
-      /* printf("%d:eval=%d\n",__LINE__,eval); */
-      /* printf("evalmove: %c%c->%c%c = %d\n",'a'+(m.from%8),'8'-(m.from/8),'a'+(m.to%8),'8'-(m.to/8),eval); */
+      int eval=-eval_negamax(apply(b,m),depth,INF,INF);
       if(eval>=besteval){
         besteval=eval;
         bestmove=m;
       }
     }
-  /* printf("ai_negamax%d, eval = %d -> %d\n",depth,eval_negamax(b,0,INF),besteval); */
-  /* printf("ai_negamax%d, eval = %d -> %d\n",depth,eval_relative(b),eval_relative(apply(b,bestmove))); */
   return bestmove;
 }
 move ai_negamax1(board b) {return ai_negamax(b,1);}
