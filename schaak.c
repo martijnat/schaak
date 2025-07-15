@@ -19,8 +19,9 @@
 #define errfun if(err!=0){printf("[%s]:%d err=%d\n",__func__,__LINE__,err);err=0;exit(1);}
 #define inboard(x,y) (x>=0 && x<8 && y>=0 && y<8)
 #define xymask(x,y) (inboard(x,y)?(1UL<<(8UL*(y)+(x))):0UL)
+#define swap(type,x,y) {type swaptemp=x;x=y;y=x;}
 
-// Piece-square tables
+/* Piece-square tables */
 int eval_P[64] = {0,0,0,0,0,0,0,0,15,16,17,18,18,17,16,15,
                   14,15,16,17,17,16,15,14,13,14,15,16,16,15,14,13,
                   12,13,14,15,15,14,13,12,11,12,13,14,14,13,13,11,
@@ -725,14 +726,63 @@ move ai_simple(board b)
   return bestmove;
 }
 
+// Piece values for MVV-LVA, quick eval for move ordering
+// (Most Valuable Victim - Least Valuable Aggressor)
+int move_score_mmv_lva(board b, move m) {
+  int piece_value[6] = {100, 300, 300, 500, 900, 2000}; // P, N, B, R, Q, K
+    int score = 0;
+    u64 to_mask = 1UL << m.to;
+
+    // Capture bonus (MVV-LVA)
+    int victim = -1;
+    int aggressor = -1;
+    u64 pieces[] = {b.P, b.N, b.B, b.R, b.Q, b.K, b.p, b.n, b.b, b.r, b.q, b.k};
+
+    for (int i = 0; i < 12; i++) {
+        if (pieces[i] & to_mask) {
+            victim = i % 6;
+            break;
+        }
+    }
+
+    u64 from_mask = 1UL << m.from;
+    for (int i = 0; i < 12; i++) {
+        if (pieces[i] & from_mask) {
+            aggressor = i % 6;
+            break;
+        }
+    }
+
+    if (victim >= 0) {
+        score = 10000 + piece_value[victim] * 10 - piece_value[aggressor];
+    }
+
+    return score;
+}
+
 int eval_negamax(board b,int depth,int alpha,int beta)
 {
   if(depth<=0)return -eval_relative(b);
   moves M=validmoves(b);
   if(M.size==0) return -eval_relative(b); /* stalemate or checkmate */
   int best=-INF;
-  for(int i=0;i<M.size;i++)
-    {
+
+  /* Score and sort moves quickly */
+  int scores[M.size];
+  for (int i = 0; i < M.size; i++) {
+    scores[i] = move_score_mmv_lva(b, M.m[i]);
+  }
+  /* Simple bubble sort */
+  for(int i=0;i<M.size;i++){
+    for(int j=i+1;j<M.size;j++){
+      if(scores[j-1]<scores[j]){
+        swap(int,scores[j-1],scores[j]);
+        swap(move,M.m[j-1],M.m[j]);
+      }
+    }
+  }
+
+  for(int i=0;i<M.size;i++) {
       int score= -eval_negamax(apply(b,M.m[i]),depth-1,-beta, -alpha);
       if (score >= beta) return beta;
       if (score > alpha) alpha = score;
@@ -966,13 +1016,14 @@ move player(board b)
 /* - ai_simple */
 
 #define whitemove player
-#define blackmove ai_negamax2
+#define blackmove ai_negamax3
 void playgame(){
   board b=startpos();
   move m={};
   int end=0;
   int turns=0;
   while(end==0 && b.movecount<50){
+    drawboard(b);
     if(b.turn){
       m = whitemove(b);
     } else {
@@ -982,17 +1033,14 @@ void playgame(){
 
     err=0;
     board b2=apply(b,m);
-    printf("err=%d\n",err);
     if(err==0){
       turns++;
       b=apply(b,m);
     } else
       err=0;
-    int eval=eval_minmax(b);
-    printf("eval=+%d\n",eval);
-    drawboard(b);
     end=board_status(b);
   }
+  drawboard(b);
   printf("%d turns played\n",turns);
   if(b.movecount>=50) printf("\n[[ 50 move rule ]]\n");
   if(end==1) printf("\n[[ Draw ]]\n");
@@ -1002,7 +1050,6 @@ void playgame(){
 }
 
 #define test_ai1 ai_negamax3
-/* #define test_ai2 ai_random */
 #define test_ai2 ai_random
 void testai(int ngames){
   int t0=time(NULL);
