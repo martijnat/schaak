@@ -757,6 +757,7 @@ move ai_negamax(board b,int depth)
         besteval=eval;
         bestmove=m;
       }
+      if(eval==INF) return bestmove; /* early exit for _any_ forced mate. */
     }
   return bestmove;
 }
