@@ -21,57 +21,6 @@
 #define xymask(x,y) (inboard(x,y)?(1UL<<(8UL*(y)+(x))):0UL)
 #define swap(type,x,y) {type swaptemp=x;x=y;y=x;}
 
-/* Piece-square tables */
-int eval_P[64] = {0,0,0,0,0,0,0,0,15,16,17,18,18,17,16,15,
-                  14,15,16,17,17,16,15,14,13,14,15,16,16,15,14,13,
-                  12,13,14,15,15,14,13,12,11,12,13,14,14,13,13,11,
-                  10,11,12,13,13,12,11,10,0,0,0,0,0,0,0,0};
-
-int eval_N[64] = {30,31,32,32,32,32,31,30,
-                  31,31,33,34,34,33,31,31,
-                  32,33,34,35,35,34,33,32,
-                  32,34,35,36,36,35,34,32,
-                  32,34,35,36,36,35,34,32,
-                  32,33,34,35,35,34,33,32,
-                  31,31,33,34,34,33,31,31,
-                  30,31,32,32,32,32,31,30};
-
-int eval_B[64]={30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30,
-                30,30,30,30,30,30,30,30};
-
-int eval_R[64]={50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50,
-                50,50,50,50,50,50,50,50};
-
-int eval_Q[64]={90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90,
-                90,90,90,90,90,90,90,90};
-
-int eval_K[64]={200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200,
-                200,200,200,200,200,200,200,200};
-
 #define u64 unsigned long int
 #define i64   signed long int
 #define u16 unsigned short
@@ -111,38 +60,36 @@ int is_check(board);
 int board_status(board);
 u64 knight_attacks(u64);
 
-int eval_minmax(board b)
-{
-  int score=0;
-  int s=board_status(b);
-  if(s==1) return  0;
-  if(s==2) return  INF;
-  if(s==3) return -INF;
-  for(int i=0;i<64;i++)
-    {
-      u64 m=(1UL<<i);
-      if(b.P&m) score+=eval_P[i];
-      if(b.N&m) score+=eval_N[i];
-      if(b.B&m) score+=eval_B[i];
-      if(b.R&m) score+=eval_R[i];
-      if(b.Q&m) score+=eval_Q[i];
-      if(b.K&m) score+=eval_K[i];
-      if(b.p&m) score-=eval_P[63-i];
-      if(b.n&m) score-=eval_N[63-i];
-      if(b.b&m) score-=eval_B[63-i];
-      if(b.r&m) score-=eval_R[63-i];
-      if(b.q&m) score-=eval_Q[63-i];
-      if(b.k&m) score-=eval_K[63-i];
-    }
-  /* int my_moves=validmoves(b).size; */
-  /* int opp_moves=validmoves(flip(b)).size; */
-  /* int movescore = 1 + my_moves - opp_moves; */
-  /* movescore/=10; */
-  /* score+=movescore; */
-  score+=(b.turn!=0?5:-5);;
-  return score;
-}
+// Precomputed piece values
+int piece_value[6] = {100, 300, 300, 500, 900, 2000};
 
+int eval_minmax(board b) {
+    int score = 0;
+    int s = board_status(b);
+    if (s != 0) { // Terminal states
+        if (s == 1) return 0;  // Draw
+        if (s == 2) return INF; // White wins
+        if (s == 3) return -INF; // Black wins
+    }
+
+    // Material evaluation
+    score += __builtin_popcountll(b.P) * piece_value[0];
+    score += __builtin_popcountll(b.N) * piece_value[1];
+    score += __builtin_popcountll(b.B) * piece_value[2];
+    score += __builtin_popcountll(b.R) * piece_value[3];
+    score += __builtin_popcountll(b.Q) * piece_value[4];
+
+    score -= __builtin_popcountll(b.p) * piece_value[0];
+    score -= __builtin_popcountll(b.n) * piece_value[1];
+    score -= __builtin_popcountll(b.b) * piece_value[2];
+    score -= __builtin_popcountll(b.r) * piece_value[3];
+    score -= __builtin_popcountll(b.q) * piece_value[4];
+
+    // Turn bonus
+    score += (b.turn != 0 ? 5 : -5);
+
+    return score;
+}
 
 int eval_relative(board b)
 {
@@ -765,7 +712,6 @@ int eval_negamax(board b,int depth,int alpha,int beta)
   if(depth<=0)return -eval_relative(b);
   moves M=validmoves(b);
   if(M.size==0) return -eval_relative(b); /* stalemate or checkmate */
-  int best=-INF;
 
   /* Score and sort moves quickly */
   int scores[M.size];
@@ -792,7 +738,6 @@ int eval_negamax(board b,int depth,int alpha,int beta)
 
 move ai_negamax(board b,int depth)
 {
-  int pcount=0;
   moves moveset=validmoves(b);
   move bestmove={0};
   int besteval = -INF;
@@ -877,35 +822,10 @@ int eval_table(board b,int depth,int alphabeta,int table)
 
   return max;
 }
-move ai_table(board b,int table)
-{
-  int pcount=0;
-  int depth=1;
-  moves moveset=validmoves(b);
-  move bestmove={0};
-  int besteval = -INF;
-  int R=rand();
-  for(int j=0;j<moveset.size;j++)
-    {
-      int i = (j+R)%moveset.size;
-      i = (i+moveset.size)%moveset.size;
-      move m=moveset.m[i];
-      int eval=-eval_table(apply(b,m),depth,-besteval,table);
-      if(eval>=besteval){
-        besteval=eval;
-        bestmove=m;
-      }
-    }
-  return bestmove;
-}
-move ai_tableA(board b) {return ai_table(b,0);}
-move ai_tableB(board b) {return ai_table(b,1);}
-
 
 void input_cleanup(char *s)
 {
   /* removes whitespace and upperspace from s */
-  char t;
   int i=0;
   for(int j=0;s[j]!=0;j++)
     {
@@ -1021,7 +941,6 @@ void playgame(){
   board b=startpos();
   move m={};
   int end=0;
-  int turns=0;
   while(end==0 && b.movecount<50){
     drawboard(b);
     if(b.turn){
@@ -1032,16 +951,14 @@ void playgame(){
     printf("move %c%c->%c%c\n",'a'+m.from%8,'1'+(7-m.from/8),'a'+m.to%8,'1'+(7-m.to/8));
 
     err=0;
-    board b2=apply(b,m);
+    apply(b,m);
     if(err==0){
-      turns++;
       b=apply(b,m);
     } else
       err=0;
     end=board_status(b);
   }
   drawboard(b);
-  printf("%d turns played\n",turns);
   if(b.movecount>=50) printf("\n[[ 50 move rule ]]\n");
   if(end==1) printf("\n[[ Draw ]]\n");
   if(end==2) printf("\n[[ White wins! ]]\n");
@@ -1049,7 +966,7 @@ void playgame(){
   return;
 }
 
-#define test_ai1 ai_negamax3
+#define test_ai1 ai_negamax2
 #define test_ai2 ai_random
 void testai(int ngames){
   int t0=time(NULL);
@@ -1070,10 +987,9 @@ void testai(int ngames){
         m = test_ai2(b);
       }
       err=0;
-      board b2=apply(b,m);
+      apply(b,m);
       if(err==0){turns++; b=apply(b,m);}
       err=0;
-      int eval=eval_minmax(b);
       end=board_status(b);
     }
     if(b.movecount>=50 || end==1) test_draw++;
@@ -1083,66 +999,6 @@ void testai(int ngames){
   }
   return;
 }
-
-
-void traintable(int ngames){
-  int t0=time(NULL);
-  printf("initializing table...\n");
-  for(int i=0;i<64;i++){
-    tableA[0][i]=100;
-    tableA[1][i]=300;
-    tableA[2][i]=300;
-    tableA[3][i]=500;
-    tableA[4][i]=900;
-    tableA[5][i]=2000;
-  }
-  for(int i=0;i<ngames;i++){
-    board b=startpos();
-    move m={};
-    int end=0;
-    int turns=0;
-    int t1=time(NULL);
-    int totaltime=i>0?((ngames)*(t1-t0))/i:-1;
-    printf("int eval_P[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[0][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("int eval_N[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[1][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("int eval_B[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[2][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("int eval_R[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[3][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("int eval_Q[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[4][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("int eval_K[64]={");for(int i=0;i<64;i++) {printf("%d%s",tableA[5][i],i==63?"};\n":(i%8==7?",\n            ":","));};
-    printf("|game %3i/%3i|time = %d/%ds\n",i+1,ngames,(t1-t0),totaltime>=0 && totaltime < 99999999?totaltime:-1);
-    for(int i=0;i<64;i++)
-      for(int j=0;j<6;j++)
-        tableB[j][i]=tableA[j][i] -1 + (rand()%3);
-    while(end==0 && b.movecount<50){
-      int table_index=(b.turn!=0)^(i%2);
-      m = ai_negamax1(b);
-      /* printf("move %c%c->%c%c\n",'a'+m.from%8,'1'+(7-m.from/8),'a'+m.to%8,'1'+(7-m.to/8)); */
-      err=0;
-      board b2=apply(b,m);
-      /* printf("err=%d\n",err); */
-      if(err==0){b=apply(b,m);}
-      err=0;
-      /* drawboard(b); */
-      end=board_status(b);
-    }
-    /* if(b.movecount>=50 || end==1) */
-    if(end==(2^(i%2))){
-      /* A wins */
-      for(int i=0;i<64;i++)
-        for(int j=0;j<6;j++)
-          tableA[j][i]=tableA[j][i]+tableA[j][i]-tableB[j][i];
-    }
-    if(end==(3^(i%2))){
-      /* B wins */
-      for(int i=0;i<64;i++)
-        for(int j=0;j<6;j++)
-          tableA[j][i]=tableB[j][i];
-    }
-  }
-  return;
-}
-
-
 
 int perft(board b,int depth)
 {
@@ -1205,6 +1061,8 @@ void uci_game(){
       b=startpos();
     } else if(memcmp(s,"position",8)==0){
       b=startpos(); /* ignore nondefault positions */
+    } else if(memcmp(s,"draw",5)==0){
+      drawboard(b);
     } else {
       output("invalid command");
     }
@@ -1215,11 +1073,10 @@ void uci_game(){
 int main(int argc, char ** argv)
 {
   srand(time(NULL));
+  /* testai(10); */
   /* uci_game(); */
   /* selftest(); */
   playgame();
-  /* testai(100); */
-  /* traintable(100); */
   /* randgame(4); */
   return 0;
 }
